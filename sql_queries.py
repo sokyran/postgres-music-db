@@ -1,72 +1,49 @@
-create_songplays = ("""
-	CREATE TABLE IF NOT EXISTS songplays (
+drop_artists = "DROP TABLE IF EXISTS artists;"
+drop_songs = "DROP TABLE IF EXISTS songs;"
+drop_time = "DROP TABLE IF EXISTS time;"
+drop_users = "DROP TABLE IF EXISTS users;"
+
+drop_queries = [drop_artists, drop_songs, drop_time, drop_users]
+
+
+create_songplays_table = """
+	CREATE TABLE IF NOT EXISTS songplays(
 		songplay_id serial primary key,
 		start_time timestamp,
-		user_id varchar(10) NOT NULL,
-		level varchar(10),
-		song_id varchar(20),
-		artist_id varchar(20),
-		session_id integer,
-		location varchar(255),
-		user_agent varchar(255)
-	);
-""")
-
-create_log_db = """
-	CREATE TABLE IF NOT EXISTS log_db (
-		songplay_id serial primary key,
-		artist varchar,
-		firstName varchar,
-		lastName varchar,
-		gender varchar,
-		length float,
+		user_id varchar NOT NULL,
 		level varchar,
-		location varchar,
-		song varchar,
-		sessionId integer,
-		userAgent varchar,
-		userId varchar NOT NULL
-	);
-"""
-
-insert_into_log = """
-	INSERT INTO log_db(artist, firstname, lastName,
-						gender, length, level, 
-						location, song, sessionId,
-						userAgent, userId) 
-						VALUES(%s, %s, %s, 
-							   %s, %s, %s, 
-						 	   %s, %s, %s, 
-							   %s, %s
-	);
-"""
-
-create_song_db = """
-	CREATE TABLE IF NOT EXISTS song_db (
-		id serial PRIMARY KEY,
-		artist_id varchar,
-		artist_location varchar,
-		artist_latitude float,
-		artist_longitude float,
-		artist_name varchar,
-		duration float,
-		num_songs integer,
 		song_id varchar,
-		title varchar,
-		year integer
+		artist_id varchar,
+		session_id integer,
+		location varchar,
+		user_agent varchar
 	);
 """
 
-insert_into_song = """
-	INSERT INTO song_db(artist_id, artist_location, artist_latitude,
-						artist_longitude, artist_name, duration, 
-						num_songs, song_id, title, 
-						year) 
-						VALUES(%s, %s, %s, 
-							   %s, %s, %s, 
-						 	   %s, %s, %s, 
-							   %s
+insert_into_songplays = """
+	INSERT INTO songplays(
+		start_time, user_id, level, song_id, artist_id, session_id, location, user_agent) 
+		VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+"""
+
+create_songs_table = """
+	CREATE TABLE IF NOT EXISTS songs (
+		song_id varchar PRIMARY KEY,		
+		title varchar,
+		artist_id varchar,
+		year integer,
+		duration float
 	);
+"""
+
+insert_into_songs = """
+	INSERT INTO songs(song_id, title, artist_id, year, duration) 
+				VALUES(%s, %s, %s, %s, %s)
+				ON CONFLICT (song_id) DO UPDATE
+					set title = EXCLUDED.title,
+					artist_id = EXCLUDED.artist_id,
+					year = EXCLUDED.year,
+					duration = EXCLUDED.duration;
 """
 
 create_time_table = """
@@ -113,4 +90,36 @@ insert_into_users = """
 			last_name = EXCLUDED.last_name,
 			gender = EXCLUDED.gender,
 			level = EXCLUDED.level;
+"""
+
+
+create_artists_table = """
+	CREATE TABLE IF NOT EXISTS artists(
+		artist_id varchar PRIMARY KEY,
+		name varchar,
+		location varchar,
+		latitude float,
+		longitude float
+	);
+"""
+
+insert_into_artists = """
+	INSERT INTO artists(artist_id, name, location, latitude, longitude)
+			VALUES(%s, %s, %s, %s, %s)
+			ON CONFLICT (artist_id) DO UPDATE
+				set name = EXCLUDED.name,
+				location = EXCLUDED.location,
+				latitude = EXCLUDED.latitude,
+				longitude = EXCLUDED.longitude;
+
+"""
+
+create_queries = [create_artists_table, create_users_table, create_songs_table, create_time_table, create_songplays_table]
+
+select_song_artist = """
+	SELECT song_id, songs.artist_id 
+	FROM artists 
+	JOIN songs 
+	ON songs.artist_id = artists.artist_id 
+	WHERE name=%s AND title=%s;
 """
